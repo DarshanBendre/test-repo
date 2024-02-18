@@ -1,0 +1,30 @@
+public class CaseService {
+    public static void closeCases(Set<Id> caseIds, String closeReason){
+        if(caseIds==null || caseIds.size()==0){
+         throw new CaseServiceException('Cases not specified.');   
+        }
+        if(closeReason == null || closeReason == ''){
+         throw new CaseServiceException('Invalid reason to close the case.');   
+        }
+        
+        List<Case> closeCaseList = [SELECT Id FROM Case WHERE Id IN :caseIds];
+        List<Case> updateCases = new List<Case>();
+        
+        for(Case closeCaseRec : closeCaseList){
+            closeCaseRec.Reason = closeReason;
+            closeCaseRec.Status = 'Closed';
+            updateCases.add(closeCaseRec);
+        }
+        
+        SavePoint sp = Database.setSavePoint();
+        
+        try{
+         update updateCases;   
+        } catch(Exception e){
+            Database.rollback(sp);
+            throw e;
+        }
+    }
+    
+     public class CaseServiceException extends Exception {} 
+}
